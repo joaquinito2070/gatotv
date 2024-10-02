@@ -46,7 +46,7 @@ function isBirthday($uploadDate) {
 // Function to check if a date is Disney's birthday
 function isDisneyBirthday($uploadDate) {
     $upload = new DateTime($uploadDate);
-    return $upload->format('m-d') === '10-16';
+    return $upload->format('Y-m-d') === date('Y') . '-10-16';
 }
 
 // Fetch playlist data
