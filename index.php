@@ -10,15 +10,51 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 $traceId = uniqid('trace-', true);
 header("X-Trace-ID: " . $traceId);
 
-// Function to fetch HTML content
-function fetchHTML($url) {
+// Function to fetch HTML content and convert it to JSON
+function fetchAndConvertToJSON($url) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     $html = curl_exec($ch);
     curl_close($ch);
-    return $html;
+    
+    // Use DOMDocument to parse HTML
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+    
+    // Convert DOM to array
+    $array = domToArray($dom->documentElement);
+    
+    return $array;
+}
+
+// Helper function to convert DOM to array
+function domToArray($root) {
+    $array = array();
+    
+    if ($root->hasAttributes()) {
+        foreach ($root->attributes as $attr) {
+            $array['@attributes'][$attr->nodeName] = $attr->nodeValue;
+        }
+    }
+    
+    if ($root->hasChildNodes()) {
+        if ($root->childNodes->length == 1 && $root->childNodes->item(0)->nodeType == XML_TEXT_NODE) {
+            $array['_value'] = $root->childNodes->item(0)->nodeValue;
+        } else {
+            foreach ($root->childNodes as $child) {
+                if ($child->nodeType != XML_TEXT_NODE) {
+                    if (!isset($array[$child->nodeName])) {
+                        $array[$child->nodeName] = array();
+                    }
+                    $array[$child->nodeName][] = domToArray($child);
+                }
+            }
+        }
+    }
+    
+    return $array;
 }
 
 // Get the channel and date from the URL
@@ -29,12 +65,12 @@ $date = isset($urlParts[3]) ? $urlParts[3] : '';
 // Construct the URL
 $url = "https://www.gatotv.com/canal/{$channel}/{$date}";
 
-// Fetch the HTML content
-$html = fetchHTML($url);
+// Fetch the HTML content and convert to JSON
+$jsonData = fetchAndConvertToJSON($url);
 
 // Prepare the response
 $response = [
-    'html' => $html,
+    'data' => $jsonData,
     'url' => $url,
     'trace_id' => $traceId
 ];
@@ -42,6 +78,3 @@ $response = [
 // Output the JSON response
 echo json_encode($response);
 ?>
-
-
-
