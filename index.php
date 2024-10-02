@@ -62,6 +62,13 @@ $urlParts = explode('/', $_SERVER['REQUEST_URI']);
 $channel = isset($urlParts[2]) ? $urlParts[2] : '';
 $date = isset($urlParts[3]) ? $urlParts[3] : '';
 
+// Check if both channel and date are provided
+if (empty($channel) || empty($date)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Both channel and date are required']);
+    exit;
+}
+
 // Construct the URL
 $url = "https://www.gatotv.com/canal/{$channel}/{$date}";
 
