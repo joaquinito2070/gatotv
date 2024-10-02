@@ -58,14 +58,22 @@ $videos = [];
 foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']['contents'] as $item) {
     $videoRenderer = $item['playlistVideoRenderer'];
     $uploadDate = $videoRenderer['publishedTimeText']['simpleText'];
-    $uploadDateTime = new DateTime($uploadDate);
+    
+    // Convert relative time to actual date
+    $currentDate = new DateTime();
+    $uploadDateTime = clone $currentDate;
+    if (preg_match('/(\d+)\s+(day|month|year)s?\s+ago/', $uploadDate, $matches)) {
+        $number = intval($matches[1]);
+        $unit = $matches[2] . 's';
+        $uploadDateTime->modify("-$number $unit");
+    }
 
     $video = [
         'title' => $videoRenderer['title']['runs'][0]['text'],
         'videoId' => $videoRenderer['videoId'],
         'uploadDate' => $uploadDateTime->format('Y-m-d'),
-        'birthday' => isBirthday($uploadDate),
-        'disney_birthday' => isDisneyBirthday($uploadDate)
+        'birthday' => isBirthday($uploadDateTime->format('Y-m-d')),
+        'disney_birthday' => isDisneyBirthday($uploadDateTime->format('Y-m-d'))
     ];
 
     if ($video['birthday']) {
@@ -89,5 +97,3 @@ $response = [
 // Output the JSON response
 echo json_encode($response, JSON_PRETTY_PRINT);
 ?>
-
-
