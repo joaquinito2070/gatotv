@@ -51,6 +51,28 @@ function isDisneyBirthday($uploadDate) {
     return $upload->format('Y-m-d') === date('Y') . '-10-16';
 }
 
+// Function to generate RSS feed
+function generateRSS($videos) {
+    $rss = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>');
+    $channel = $rss->addChild('channel');
+    $channel->addChild('title', 'Miss Tilly Birthday Videos');
+    $channel->addChild('link', 'https://www.youtube.com/playlist?list=PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET');
+    $channel->addChild('description', 'Recent birthday videos from Miss Tilly');
+
+    foreach ($videos as $video) {
+        if ($video['birthday']) {
+            $item = $channel->addChild('item');
+            $item->addChild('title', $video['title']);
+            $item->addChild('link', 'https://www.youtube.com/watch?v=' . $video['videoId']);
+            $item->addChild('description', $video['birthday_message']);
+            $item->addChild('pubDate', date('r', strtotime($video['uploadDate'])));
+            $item->addChild('guid', $video['videoId']);
+        }
+    }
+
+    return $rss->asXML();
+}
+
 // Fetch playlist data
 $playlistId = 'PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET';
 $playlistData = fetchPlaylistData($playlistId);
@@ -108,6 +130,12 @@ $response = [
     'trace_id' => $traceId
 ];
 
-// Output the JSON response
-echo json_encode($response, JSON_PRETTY_PRINT);
+// Check if RSS format is requested
+if (isset($_GET['format']) && $_GET['format'] === 'rss') {
+    header("Content-Type: application/rss+xml; charset=UTF-8");
+    echo generateRSS($videos);
+} else {
+    // Output the JSON response
+    echo json_encode($response, JSON_PRETTY_PRINT);
+}
 ?>
