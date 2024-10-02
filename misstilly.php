@@ -38,6 +38,7 @@ function fetchPlaylistData($playlistId) {
 
 // Function to check if a date is a birthday
 function isBirthday($uploadDate) {
+    if ($uploadDate === 'unknown') return false;
     $today = new DateTime();
     $upload = new DateTime($uploadDate);
     return $today->format('m-d') === $upload->format('m-d') && $today->format('Y') !== $upload->format('Y');
@@ -45,6 +46,7 @@ function isBirthday($uploadDate) {
 
 // Function to check if a date is Disney's birthday
 function isDisneyBirthday($uploadDate) {
+    if ($uploadDate === 'unknown') return false;
     $upload = new DateTime($uploadDate);
     return $upload->format('Y-m-d') === date('Y') . '-10-16';
 }
@@ -55,25 +57,36 @@ $playlistData = fetchPlaylistData($playlistId);
 
 // Process video data
 $videos = [];
+$startDate = new DateTime('2021-10-02');
+$index = 0;
+
 foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']['contents'] as $item) {
     $videoRenderer = $item['playlistVideoRenderer'];
-    $uploadDate = $videoRenderer['publishedTimeText']['simpleText'];
+    $videoId = $videoRenderer['videoId'];
     
-    // Convert relative time to actual date
-    $currentDate = new DateTime();
-    $uploadDateTime = clone $currentDate;
-    if (preg_match('/(\d+)\s+(day|month|year)s?\s+ago/', $uploadDate, $matches)) {
-        $number = intval($matches[1]);
-        $unit = $matches[2] . 's';
-        $uploadDateTime->modify("-$number $unit");
+    if ($index === 0 && $videoId === 'Yaje-84F7CM') {
+        $uploadDate = '2021-10-02';
+    } elseif ($index < 7) {
+        do {
+            $startDate->modify('+1 day');
+        } while ($startDate->format('N') < 6 || ($startDate >= new DateTime('2021-10-24') && $startDate <= new DateTime('2021-11-07')));
+        $uploadDate = $startDate->format('Y-m-d');
+    } elseif ($index < 16) {
+        $startDate = new DateTime('2021-11-13');
+        do {
+            $startDate->modify('+1 day');
+        } while ($startDate->format('N') < 6);
+        $uploadDate = $startDate->format('Y-m-d');
+    } else {
+        $uploadDate = 'unknown';
     }
 
     $video = [
         'title' => $videoRenderer['title']['runs'][0]['text'],
-        'videoId' => $videoRenderer['videoId'],
-        'uploadDate' => $uploadDateTime->format('Y-m-d'),
-        'birthday' => isBirthday($uploadDateTime->format('Y-m-d')),
-        'disney_birthday' => isDisneyBirthday($uploadDateTime->format('Y-m-d'))
+        'videoId' => $videoId,
+        'uploadDate' => $uploadDate,
+        'birthday' => isBirthday($uploadDate),
+        'disney_birthday' => isDisneyBirthday($uploadDate)
     ];
 
     if ($video['birthday']) {
@@ -85,6 +98,7 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
     }
 
     $videos[] = $video;
+    $index++;
 }
 
 // Prepare the response
