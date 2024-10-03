@@ -37,18 +37,17 @@ function fetchPlaylistData($playlistId) {
 }
 
 // Function to check if a date is a birthday
-function isBirthday($uploadDate) {
+function isBirthday($uploadDate, $simulatedTime) {
     if ($uploadDate === 'unknown') return false;
-    $today = new DateTime();
+    $today = new DateTime($simulatedTime);
     $upload = new DateTime($uploadDate);
     return $today->format('m-d') === $upload->format('m-d') && $today->format('Y') !== $upload->format('Y');
 }
 
 // Function to check if a date is Disney's birthday
-function isDisneyBirthday($uploadDate) {
-    if ($uploadDate === 'unknown') return false;
-    $upload = new DateTime($uploadDate);
-    return $upload->format('Y-m-d') === date('Y') . '-10-16';
+function isDisneyBirthday($simulatedTime) {
+    $today = new DateTime($simulatedTime);
+    return $today->format('m-d') === '10-16';
 }
 
 // Function to generate RSS feed
@@ -108,10 +107,10 @@ function generateJSONFeed($videos, $lastUpdateTime) {
 }
 
 // Function to determine if an update should occur and return the update time
-function getUpdateTime() {
+function getUpdateTime($simulatedTime) {
     $horaFile = 'hora.txt';
-    $currentTime = time();
-    $midnight = strtotime('today');
+    $currentTime = strtotime($simulatedTime);
+    $midnight = strtotime(date('Y-m-d', $currentTime));
     $timeSinceMidnight = $currentTime - $midnight;
     
     if (file_exists($horaFile)) {
@@ -126,12 +125,15 @@ function getUpdateTime() {
         $newUpdateTime = $currentTime;
     } else {
         // If not within the update window, set a random time between 6 and 30 minutes after midnight for the next day
-        $newUpdateTime = strtotime('tomorrow') + rand(360, 1800);
+        $newUpdateTime = strtotime('+1 day', $midnight) + rand(360, 1800);
     }
     
     file_put_contents($horaFile, $newUpdateTime);
     return $newUpdateTime;
 }
+
+// Get simulated time from GET parameter or use current time
+$simulatedTime = isset($_GET['time']) ? $_GET['time'] : date('c');
 
 // Fetch playlist data
 $playlistId = 'PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET';
@@ -170,8 +172,8 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
         'title' => $videoRenderer['title']['runs'][0]['text'],
         'videoId' => $videoId,
         'uploadDate' => $uploadDate,
-        'birthday' => isBirthday($uploadDate),
-        'disney_birthday' => isDisneyBirthday($uploadDate)
+        'birthday' => isBirthday($uploadDate, $simulatedTime),
+        'disney_birthday' => isDisneyBirthday($simulatedTime)
     ];
 
     if ($video['birthday']) {
@@ -187,14 +189,15 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
 }
 
 // Get the update time
-$lastUpdateTime = getUpdateTime();
+$lastUpdateTime = getUpdateTime($simulatedTime);
 
 // Prepare the response
 $response = [
     'playlist_id' => $playlistId,
     'videos' => $videos,
     'trace_id' => $traceId,
-    'last_update' => date('Y-m-d\TH:i:sP', strtotime('-1 day', $lastUpdateTime))
+    'last_update' => date('Y-m-d\TH:i:sP', strtotime('-1 day', $lastUpdateTime)),
+    'simulated_time' => $simulatedTime
 ];
 
 // Check if RSS format is requested
