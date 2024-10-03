@@ -115,13 +115,11 @@ function getUpdateTime() {
     
     // Update between 6 and 30 minutes after midnight
     if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
-        // 50% chance of updating
-        if (rand(0, 1) == 1) {
-            return $currentTime;
-        }
+        return $currentTime;
     }
     
-    return $midnight;
+    // If not within the update window, return a random time between 6 and 30 minutes after midnight
+    return $midnight + rand(360, 1800);
 }
 
 // Fetch playlist data
