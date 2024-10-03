@@ -109,17 +109,28 @@ function generateJSONFeed($videos, $lastUpdateTime) {
 
 // Function to determine if an update should occur and return the update time
 function getUpdateTime() {
+    $horaFile = 'hora.txt';
     $currentTime = time();
     $midnight = strtotime('today');
     $timeSinceMidnight = $currentTime - $midnight;
     
-    // Update between 6 and 30 minutes after midnight
-    if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
-        return $currentTime;
+    if (file_exists($horaFile)) {
+        $savedTime = (int)file_get_contents($horaFile);
+        if ($currentTime < $savedTime) {
+            return $savedTime;
+        }
     }
     
-    // If not within the update window, return a random time between 6 and 30 minutes after midnight
-    return $midnight + rand(360, 1800);
+    // Update between 6 and 30 minutes after midnight
+    if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
+        $newUpdateTime = $currentTime;
+    } else {
+        // If not within the update window, set a random time between 6 and 30 minutes after midnight for the next day
+        $newUpdateTime = strtotime('tomorrow') + rand(360, 1800);
+    }
+    
+    file_put_contents($horaFile, $newUpdateTime);
+    return $newUpdateTime;
 }
 
 // Fetch playlist data
