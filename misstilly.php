@@ -52,12 +52,13 @@ function isDisneyBirthday($uploadDate) {
 }
 
 // Function to generate RSS feed
-function generateRSS($videos) {
+function generateRSS($videos, $lastUpdateTime) {
     $rss = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>');
     $channel = $rss->addChild('channel');
     $channel->addChild('title', 'Miss Tilly Birthday Videos');
     $channel->addChild('link', 'https://www.youtube.com/playlist?list=PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET');
     $channel->addChild('description', 'Recent birthday videos from Miss Tilly');
+    $channel->addChild('lastBuildDate', date('r', $lastUpdateTime));
 
     foreach ($videos as $video) {
         if ($video['birthday']) {
@@ -69,7 +70,7 @@ function generateRSS($videos) {
                 $description .= ' ' . $video['disney_message'];
             }
             $item->addChild('description', $description);
-            $item->addChild('pubDate', date('r', strtotime($video['uploadDate'])));
+            $item->addChild('pubDate', date('r', $lastUpdateTime));
             $item->addChild('guid', $video['videoId']);
         }
     }
@@ -78,7 +79,7 @@ function generateRSS($videos) {
 }
 
 // Function to generate JSON Feed
-function generateJSONFeed($videos) {
+function generateJSONFeed($videos, $lastUpdateTime) {
     $feed = [
         'version' => 'https://jsonfeed.org/version/1',
         'title' => 'Miss Tilly Birthday Videos',
@@ -94,7 +95,7 @@ function generateJSONFeed($videos) {
                 'url' => 'https://www.youtube.com/watch?v=' . $video['videoId'],
                 'title' => $video['title'],
                 'content_text' => $video['birthday_message'],
-                'date_published' => date('c', strtotime($video['uploadDate']))
+                'date_published' => date('c', $lastUpdateTime)
             ];
             if ($video['disney_birthday']) {
                 $item['content_text'] .= ' ' . $video['disney_message'];
@@ -104,6 +105,21 @@ function generateJSONFeed($videos) {
     }
 
     return json_encode($feed, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+}
+
+// Function to determine if an update should occur
+function shouldUpdate() {
+    $currentTime = time();
+    $midnight = strtotime('today');
+    $timeSinceMidnight = $currentTime - $midnight;
+    
+    // Update between 6 and 30 minutes after midnight
+    if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
+        // 50% chance of updating
+        return (rand(0, 1) == 1);
+    }
+    
+    return false;
 }
 
 // Fetch playlist data
@@ -159,20 +175,24 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
     $index++;
 }
 
+// Determine if an update should occur
+$lastUpdateTime = shouldUpdate() ? time() : strtotime('today');
+
 // Prepare the response
 $response = [
     'playlist_id' => $playlistId,
     'videos' => $videos,
-    'trace_id' => $traceId
+    'trace_id' => $traceId,
+    'last_update' => date('c', $lastUpdateTime)
 ];
 
 // Check if RSS format is requested
 if (isset($_GET['format']) && $_GET['format'] === 'rss') {
     header("Content-Type: application/rss+xml; charset=UTF-8");
-    echo generateRSS($videos);
+    echo generateRSS($videos, $lastUpdateTime);
 } elseif (isset($_GET['format']) && $_GET['format'] === 'json') {
     header("Content-Type: application/json; charset=UTF-8");
-    echo generateJSONFeed($videos);
+    echo generateJSONFeed($videos, $lastUpdateTime);
 } else {
     // Output the JSON response
     echo json_encode($response, JSON_PRETTY_PRINT);
