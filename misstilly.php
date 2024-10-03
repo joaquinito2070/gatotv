@@ -194,7 +194,7 @@ $response = [
     'playlist_id' => $playlistId,
     'videos' => $videos,
     'trace_id' => $traceId,
-    'last_update' => date('c', $lastUpdateTime)
+    'last_update' => date('Y-m-d\TH:i:sP', strtotime('-1 day', $lastUpdateTime))
 ];
 
 // Check if RSS format is requested
