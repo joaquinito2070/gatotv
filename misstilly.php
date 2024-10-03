@@ -116,8 +116,8 @@ function getUpdateTime($simulatedTime) {
     if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
         return $currentTime; // Return the actual update time
     } else {
-        // If not within the update window, return false
-        return false;
+        // If not within the update window, return the current time
+        return $currentTime;
     }
 }
 
@@ -185,17 +185,17 @@ $response = [
     'playlist_id' => $playlistId,
     'videos' => $videos,
     'trace_id' => $traceId,
-    'last_update' => $lastUpdateTime ? date('Y-m-d\TH:i:sP', $lastUpdateTime) : null,
+    'last_update' => date('Y-m-d\TH:i:sP', $lastUpdateTime),
     'simulated_time' => $simulatedTime
 ];
 
 // Check if RSS format is requested
 if (isset($_GET['format']) && $_GET['format'] === 'rss') {
     header("Content-Type: application/rss+xml; charset=UTF-8");
-    echo generateRSS($videos, $lastUpdateTime ?: strtotime($simulatedTime));
+    echo generateRSS($videos, $lastUpdateTime);
 } elseif (isset($_GET['format']) && $_GET['format'] === 'json') {
     header("Content-Type: application/json; charset=UTF-8");
-    echo generateJSONFeed($videos, $lastUpdateTime ?: strtotime($simulatedTime));
+    echo generateJSONFeed($videos, $lastUpdateTime);
 } else {
     // Output the JSON response
     echo json_encode($response, JSON_PRETTY_PRINT);
