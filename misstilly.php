@@ -126,13 +126,14 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
             $startDate->modify('+1 day');
         } while ($startDate->format('N') < 6 || ($startDate >= new DateTime('2021-10-24') && $startDate <= new DateTime('2021-11-07')));
         $uploadDate = $startDate->format('Y-m-d');
-    } elseif ($index >= 7) {
+    } elseif ($index >= 7 && $index < 16) {
         if ($index === 7) {
-            $startDate = new DateTime('2021-11-13');
+            $startDate = new DateTime('2021-11-14');
+        } else {
+            do {
+                $startDate->modify('+1 day');
+            } while ($startDate->format('N') < 6);
         }
-        do {
-            $startDate->modify('+1 day');
-        } while ($startDate->format('N') < 6);
         $uploadDate = $startDate->format('Y-m-d');
     } else {
         $uploadDate = 'unknown';
