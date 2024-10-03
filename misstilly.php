@@ -108,28 +108,17 @@ function generateJSONFeed($videos, $lastUpdateTime) {
 
 // Function to determine if an update should occur and return the update time
 function getUpdateTime($simulatedTime) {
-    $horaFile = 'hora.txt';
     $currentTime = strtotime($simulatedTime);
     $midnight = strtotime(date('Y-m-d', $currentTime));
     $timeSinceMidnight = $currentTime - $midnight;
     
-    if (file_exists($horaFile)) {
-        $savedTime = (int)file_get_contents($horaFile);
-        if ($currentTime < $savedTime) {
-            return $savedTime;
-        }
-    }
-    
     // Update between 6 and 30 minutes after midnight
     if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
-        $newUpdateTime = $currentTime;
+        return $midnight; // Return midnight (00:00:00) as the update time
     } else {
-        // If not within the update window, set a random time between 6 and 30 minutes after midnight for the next day
-        $newUpdateTime = strtotime('+1 day', $midnight) + rand(360, 1800);
+        // If not within the update window, return false
+        return false;
     }
-    
-    file_put_contents($horaFile, $newUpdateTime);
-    return $newUpdateTime;
 }
 
 // Get simulated time from GET parameter or use current time
@@ -196,17 +185,17 @@ $response = [
     'playlist_id' => $playlistId,
     'videos' => $videos,
     'trace_id' => $traceId,
-    'last_update' => date('Y-m-d\TH:i:sP', strtotime('-1 day', $lastUpdateTime)),
+    'last_update' => $lastUpdateTime ? date('Y-m-d\TH:i:sP', $lastUpdateTime) : null,
     'simulated_time' => $simulatedTime
 ];
 
 // Check if RSS format is requested
 if (isset($_GET['format']) && $_GET['format'] === 'rss') {
     header("Content-Type: application/rss+xml; charset=UTF-8");
-    echo generateRSS($videos, $lastUpdateTime);
+    echo generateRSS($videos, $lastUpdateTime ?: strtotime($simulatedTime));
 } elseif (isset($_GET['format']) && $_GET['format'] === 'json') {
     header("Content-Type: application/json; charset=UTF-8");
-    echo generateJSONFeed($videos, $lastUpdateTime);
+    echo generateJSONFeed($videos, $lastUpdateTime ?: strtotime($simulatedTime));
 } else {
     // Output the JSON response
     echo json_encode($response, JSON_PRETTY_PRINT);
