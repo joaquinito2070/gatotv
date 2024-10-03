@@ -107,8 +107,8 @@ function generateJSONFeed($videos, $lastUpdateTime) {
     return json_encode($feed, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 }
 
-// Function to determine if an update should occur
-function shouldUpdate() {
+// Function to determine if an update should occur and return the update time
+function getUpdateTime() {
     $currentTime = time();
     $midnight = strtotime('today');
     $timeSinceMidnight = $currentTime - $midnight;
@@ -116,10 +116,12 @@ function shouldUpdate() {
     // Update between 6 and 30 minutes after midnight
     if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
         // 50% chance of updating
-        return (rand(0, 1) == 1);
+        if (rand(0, 1) == 1) {
+            return $currentTime;
+        }
     }
     
-    return false;
+    return $midnight;
 }
 
 // Fetch playlist data
@@ -175,8 +177,8 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
     $index++;
 }
 
-// Determine if an update should occur
-$lastUpdateTime = shouldUpdate() ? time() : strtotime('today');
+// Get the update time
+$lastUpdateTime = getUpdateTime();
 
 // Prepare the response
 $response = [
