@@ -64,13 +64,46 @@ function generateRSS($videos) {
             $item = $channel->addChild('item');
             $item->addChild('title', $video['title']);
             $item->addChild('link', 'https://www.youtube.com/watch?v=' . $video['videoId']);
-            $item->addChild('description', $video['birthday_message']);
+            $description = $video['birthday_message'];
+            if ($video['disney_birthday']) {
+                $description .= ' ' . $video['disney_message'];
+            }
+            $item->addChild('description', $description);
             $item->addChild('pubDate', date('r', strtotime($video['uploadDate'])));
             $item->addChild('guid', $video['videoId']);
         }
     }
 
     return $rss->asXML();
+}
+
+// Function to generate JSON Feed
+function generateJSONFeed($videos) {
+    $feed = [
+        'version' => 'https://jsonfeed.org/version/1',
+        'title' => 'Miss Tilly Birthday Videos',
+        'home_page_url' => 'https://www.youtube.com/playlist?list=PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET',
+        'feed_url' => 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'],
+        'items' => []
+    ];
+
+    foreach ($videos as $video) {
+        if ($video['birthday']) {
+            $item = [
+                'id' => $video['videoId'],
+                'url' => 'https://www.youtube.com/watch?v=' . $video['videoId'],
+                'title' => $video['title'],
+                'content_text' => $video['birthday_message'],
+                'date_published' => date('c', strtotime($video['uploadDate']))
+            ];
+            if ($video['disney_birthday']) {
+                $item['content_text'] .= ' ' . $video['disney_message'];
+            }
+            $feed['items'][] = $item;
+        }
+    }
+
+    return json_encode($feed, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 }
 
 // Fetch playlist data
@@ -93,8 +126,10 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
             $startDate->modify('+1 day');
         } while ($startDate->format('N') < 6 || ($startDate >= new DateTime('2021-10-24') && $startDate <= new DateTime('2021-11-07')));
         $uploadDate = $startDate->format('Y-m-d');
-    } elseif ($index < 16) {
-        $startDate = new DateTime('2021-11-13');
+    } elseif ($index >= 7) {
+        if ($index === 7) {
+            $startDate = new DateTime('2021-11-13');
+        }
         do {
             $startDate->modify('+1 day');
         } while ($startDate->format('N') < 6);
@@ -116,7 +151,7 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
     }
 
     if ($video['disney_birthday']) {
-        $video['disney_message'] = "Disney nació el 16 de octubre de 1923";
+        $video['disney_message'] = "¡Hoy Disney está de cumpleaños! Disney nació el 16 de octubre de 1923.";
     }
 
     $videos[] = $video;
@@ -134,6 +169,9 @@ $response = [
 if (isset($_GET['format']) && $_GET['format'] === 'rss') {
     header("Content-Type: application/rss+xml; charset=UTF-8");
     echo generateRSS($videos);
+} elseif (isset($_GET['format']) && $_GET['format'] === 'json') {
+    header("Content-Type: application/json; charset=UTF-8");
+    echo generateJSONFeed($videos);
 } else {
     // Output the JSON response
     echo json_encode($response, JSON_PRETTY_PRINT);
