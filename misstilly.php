@@ -128,7 +128,7 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
         $uploadDate = $startDate->format('Y-m-d');
     } elseif ($index >= 7 && $index < 16) {
         if ($index === 7) {
-            $startDate = new DateTime('2021-11-14');
+            $startDate = new DateTime('2021-11-13');
         } else {
             do {
                 $startDate->modify('+1 day');
