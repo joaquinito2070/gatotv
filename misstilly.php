@@ -114,7 +114,7 @@ function getUpdateTime($simulatedTime) {
     
     // Update between 6 and 30 minutes after midnight
     if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
-        return $midnight; // Return midnight (00:00:00) as the update time
+        return $currentTime; // Return the actual update time
     } else {
         // If not within the update window, return false
         return false;
