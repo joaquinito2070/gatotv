@@ -289,7 +289,8 @@ if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
     if ($birthdayVideo) {
         $redirectUrl = 'https://www.youtube.com/watch?v=' . $birthdayVideo['videoId'];
         if (isset($birthdayVideo['disney_birthday']) && $birthdayVideo['disney_birthday']) {
-            $redirectUrl = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($redirectUrl)) . '&time=' . urlencode($simulatedTime) . '&time_zone=' . urlencode($timezone);
+            $currentTime = new DateTime('now', new DateTimeZone($timezone));
+            $redirectUrl = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($redirectUrl)) . '&time=' . urlencode($currentTime->format('c')) . '&time_zone=' . urlencode($timezone);
         }
         header("Location: " . $redirectUrl);
         exit;
