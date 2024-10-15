@@ -112,9 +112,10 @@ function getUpdateTime($simulatedTime) {
     $midnight = strtotime(date('Y-m-d', $currentTime));
     $timeSinceMidnight = $currentTime - $midnight;
     
-    // Update between 6 and 30 minutes after midnight
+    // Update between 6 and 30 minutes after midnight, dynamically
     if ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800) {
-        return $currentTime; // Return the actual update time
+        $updateDelay = mt_rand(360, 1800); // Random delay between 6 and 30 minutes
+        return $midnight + $updateDelay;
     } else {
         // If not within the update window, return the current time
         return $currentTime;
@@ -123,6 +124,12 @@ function getUpdateTime($simulatedTime) {
 
 // Get simulated time from GET parameter or use current time
 $simulatedTime = isset($_GET['time']) ? $_GET['time'] : date('c');
+
+// Get timezone from GET parameter or use default
+$timezone = isset($_GET['time_zone']) ? $_GET['time_zone'] : 'UTC';
+
+// Set the timezone
+date_default_timezone_set($timezone);
 
 // Fetch playlist data
 $playlistId = 'PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET';
@@ -186,8 +193,24 @@ $response = [
     'videos' => $videos,
     'trace_id' => $traceId,
     'last_update' => date('Y-m-d\TH:i:sP', $lastUpdateTime),
-    'simulated_time' => $simulatedTime
+    'simulated_time' => $simulatedTime,
+    'timezone' => $timezone
 ];
+
+// Check if redirection is requested
+if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
+    $birthdayVideo = null;
+    foreach ($videos as $video) {
+        if ($video['birthday']) {
+            $birthdayVideo = $video;
+            break;
+        }
+    }
+    if ($birthdayVideo) {
+        header("Location: https://www.youtube.com/watch?v=" . $birthdayVideo['videoId']);
+        exit;
+    }
+}
 
 // Check if RSS format is requested
 if (isset($_GET['format']) && $_GET['format'] === 'rss') {
