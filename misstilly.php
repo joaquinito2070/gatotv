@@ -63,7 +63,11 @@ function generateRSS($videos, $lastUpdateTime) {
         if (isset($video['birthday']) && $video['birthday']) {
             $item = $channel->addChild('item');
             $item->addChild('title', $video['title']);
-            $item->addChild('link', 'https://www.youtube.com/watch?v=' . $video['videoId']);
+            $link = 'https://www.youtube.com/watch?v=' . $video['videoId'];
+            if (isset($video['disney_birthday']) && $video['disney_birthday']) {
+                $link = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($link));
+            }
+            $item->addChild('link', $link);
             $description = $video['birthday_message'];
             if (isset($video['disney_birthday']) && $video['disney_birthday']) {
                 $description .= ' ' . $video['disney_message'];
@@ -89,9 +93,13 @@ function generateJSONFeed($videos, $lastUpdateTime) {
 
     foreach ($videos as $video) {
         if (isset($video['birthday']) && $video['birthday']) {
+            $url = 'https://www.youtube.com/watch?v=' . $video['videoId'];
+            if (isset($video['disney_birthday']) && $video['disney_birthday']) {
+                $url = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($url));
+            }
             $item = [
                 'id' => $video['videoId'],
-                'url' => 'https://www.youtube.com/watch?v=' . $video['videoId'],
+                'url' => $url,
                 'title' => $video['title'],
                 'content_text' => $video['birthday_message'],
                 'date_published' => date('c', $lastUpdateTime)
@@ -119,12 +127,16 @@ function generateJSONAPI($videos, $lastUpdateTime, $traceId, $playlistId, $simul
             if (isset($video['disney_birthday']) && $video['disney_birthday']) {
                 $attributes['disneyBirthdayMessage'] = $video['disney_message'];
             }
+            $url = 'https://www.youtube.com/watch?v=' . $video['videoId'];
+            if (isset($video['disney_birthday']) && $video['disney_birthday']) {
+                $url = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($url));
+            }
             $data[] = [
                 'type' => 'birthdayVideos',
                 'id' => $video['videoId'],
                 'attributes' => $attributes,
                 'links' => [
-                    'self' => 'https://www.youtube.com/watch?v=' . $video['videoId']
+                    'self' => $url
                 ]
             ];
         }
@@ -271,7 +283,11 @@ if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
         }
     }
     if ($birthdayVideo) {
-        header("Location: https://www.youtube.com/watch?v=" . $birthdayVideo['videoId']);
+        $redirectUrl = 'https://www.youtube.com/watch?v=' . $birthdayVideo['videoId'];
+        if (isset($birthdayVideo['disney_birthday']) && $birthdayVideo['disney_birthday']) {
+            $redirectUrl = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($redirectUrl));
+        }
+        header("Location: " . $redirectUrl);
         exit;
     } else {
         // If no birthday video is found or outside the redirect window, return a 404 error
