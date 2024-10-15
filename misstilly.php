@@ -165,6 +165,7 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
     }
 
     $simulatedDateTime = new DateTime($simulatedTime);
+    $simulatedDateTime->setTimezone(new DateTimeZone($timezone));
     $video = [
         'title' => $videoRenderer['title']['runs'][0]['text'],
         'videoId' => $videoId,
@@ -194,7 +195,7 @@ $response = [
     'videos' => $videos,
     'trace_id' => $traceId,
     'last_update' => date('Y-m-d\TH:i:sP', $lastUpdateTime),
-    'simulated_time' => $simulatedTime,
+    'simulated_time' => $simulatedDateTime->format('Y-m-d\TH:i:sP'),
     'timezone' => $timezone
 ];
 
