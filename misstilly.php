@@ -191,8 +191,8 @@ $timeSinceMidnight = $currentTime - $midnight;
 // Generate a random number between 360 and 1800 (6 to 30 minutes)
 $randomDelay = mt_rand(360, 1800);
 
-// Determine if birthdays should be shown based on the random delay
-$showBirthdays = ($timeSinceMidnight >= $randomDelay && $timeSinceMidnight <= 1800);
+// Determine if birthdays should be shown based on the current time
+$showBirthdays = ($timeSinceMidnight <= 86400); // Show birthdays for the entire day (86400 seconds)
 
 foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']['contents'] as $item) {
     $videoRenderer = $item['playlistVideoRenderer'];
@@ -260,10 +260,7 @@ $response = [
 // Check if redirection is requested
 if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
     $birthdayVideo = null;
-    $currentTime = strtotime($simulatedTime);
-    $midnight = strtotime(date('Y-m-d', $currentTime));
-    $timeSinceMidnight = $currentTime - $midnight;
-    $redirectWindow = ($timeSinceMidnight >= $randomDelay && $timeSinceMidnight <= 1800);
+    $redirectWindow = $showBirthdays; // Use the same condition as showBirthdays
 
     if ($redirectWindow) {
         foreach ($videos as $video) {
