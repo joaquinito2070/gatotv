@@ -21,54 +21,60 @@ $userAgent = decodeBase64Zlib($_GET['base64_user_agent'] ?? '');
 $start = decodeBase64Zlib($_GET['base64_start'] ?? '');
 $end = decodeBase64Zlib($_GET['base64_end'] ?? '');
 $simulatedTime = decodeBase64Zlib($_GET['base64_time'] ?? '');
+$timezone = decodeBase64Zlib($_GET['base64_time_zone'] ?? '');
+
+// Set timezone if provided, otherwise use UTC
+if (!empty($timezone)) {
+    date_default_timezone_set($timezone);
+} else {
+    date_default_timezone_set('UTC');
+}
 
 // Use simulated time if provided, otherwise use current time
 $currentTime = !empty($simulatedTime) ? new DateTime($simulatedTime) : new DateTime();
-$startTime = new DateTime($start);
 
-if ($currentTime >= $startTime) {
-    // Validate URL
-    if (filter_var($url, FILTER_VALIDATE_URL)) {
-        // Set additional headers if provided
-        if (!empty($requestHeaders)) {
-            $headers = json_decode($requestHeaders, true);
-            foreach ($headers as $key => $value) {
-                header("$key: $value");
-            }
+// Validate URL
+if (filter_var($url, FILTER_VALIDATE_URL)) {
+    // Set additional headers if provided
+    if (!empty($requestHeaders)) {
+        $headers = json_decode($requestHeaders, true);
+        foreach ($headers as $key => $value) {
+            header("$key: $value");
         }
-
-        // Set User-Agent if provided
-        if (!empty($userAgent)) {
-            header("User-Agent: $userAgent");
-        }
-
-        // Set start and end headers if provided
-        if (!empty($start)) {
-            $formattedStart = (new DateTime($start))->format('Y-m-d\TH:i:sP');
-            header("X-Start: $formattedStart");
-        }
-        if (!empty($end)) {
-            $formattedEnd = (new DateTime($end))->format('Y-m-d\TH:i:sP');
-            header("X-End: $formattedEnd");
-        }
-
-        // Set simulated time header if provided
-        if (!empty($simulatedTime)) {
-            $formattedSimulatedTime = $currentTime->format('Y-m-d\TH:i:sP');
-            header("X-Simulated-Time: $formattedSimulatedTime");
-        }
-
-        // Redirect to the decoded URL
-        header("Location: $url");
-        exit;
-    } else {
-        // Invalid URL
-        header("HTTP/1.0 400 Bad Request");
-        echo json_encode(['error' => 'Invalid URL provided']);
     }
+
+    // Set User-Agent if provided
+    if (!empty($userAgent)) {
+        header("User-Agent: $userAgent");
+    }
+
+    // Set start and end headers if provided
+    if (!empty($start)) {
+        $formattedStart = (new DateTime($start))->format('Y-m-d\TH:i:sP');
+        header("X-Start: $formattedStart");
+    }
+    if (!empty($end)) {
+        $formattedEnd = (new DateTime($end))->format('Y-m-d\TH:i:sP');
+        header("X-End: $formattedEnd");
+    }
+
+    // Set simulated time header if provided
+    if (!empty($simulatedTime)) {
+        $formattedSimulatedTime = $currentTime->format('Y-m-d\TH:i:sP');
+        header("X-Simulated-Time: $formattedSimulatedTime");
+    }
+
+    // Set timezone header if provided
+    if (!empty($timezone)) {
+        header("X-Timezone: $timezone");
+    }
+
+    // Redirect to the decoded URL
+    header("Location: $url");
+    exit;
 } else {
-    // Not time to start redirecting yet
-    header("HTTP/1.0 403 Forbidden");
-    echo json_encode(['error' => 'Redirection not allowed at this time']);
+    // Invalid URL
+    header("HTTP/1.0 400 Bad Request");
+    echo json_encode(['error' => 'Invalid URL provided']);
 }
 ?>
