@@ -140,6 +140,12 @@ $videos = [];
 $startDate = new DateTime('2021-10-02');
 $index = 0;
 
+// Determine if birthdays should be shown
+$currentTime = strtotime($simulatedTime);
+$midnight = strtotime(date('Y-m-d', $currentTime));
+$timeSinceMidnight = $currentTime - $midnight;
+$showBirthdays = ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800);
+
 foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']['contents'] as $item) {
     $videoRenderer = $item['playlistVideoRenderer'];
     $videoId = $videoRenderer['videoId'];
@@ -169,17 +175,20 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
     $video = [
         'title' => $videoRenderer['title']['runs'][0]['text'],
         'videoId' => $videoId,
-        'uploadDate' => $uploadDate,
-        'birthday' => isBirthday($uploadDate, $simulatedDateTime->format('Y-m-d H:i:s')),
-        'disney_birthday' => isDisneyBirthday($simulatedDateTime->format('Y-m-d H:i:s'))
+        'uploadDate' => $uploadDate
     ];
 
-    if ($video['birthday']) {
-        $video['birthday_message'] = "¡Hoy este vídeo está de cumpleaños!";
-    }
+    if ($showBirthdays) {
+        $video['birthday'] = isBirthday($uploadDate, $simulatedDateTime->format('Y-m-d H:i:s'));
+        $video['disney_birthday'] = isDisneyBirthday($simulatedDateTime->format('Y-m-d H:i:s'));
 
-    if ($video['disney_birthday']) {
-        $video['disney_message'] = "¡Hoy Disney está de cumpleaños! Disney nació el 16 de octubre de 1923.";
+        if ($video['birthday']) {
+            $video['birthday_message'] = "¡Hoy este vídeo está de cumpleaños!";
+        }
+
+        if ($video['disney_birthday']) {
+            $video['disney_message'] = "¡Hoy Disney está de cumpleaños! Disney nació el 16 de octubre de 1923.";
+        }
     }
 
     $videos[] = $video;
@@ -196,25 +205,33 @@ $response = [
     'trace_id' => $traceId,
     'last_update' => date('Y-m-d\TH:i:sP', $lastUpdateTime),
     'simulated_time' => $simulatedDateTime->format('Y-m-d\TH:i:sP'),
-    'timezone' => $timezone
+    'timezone' => $timezone,
+    'show_birthdays' => $showBirthdays
 ];
 
 // Check if redirection is requested
 if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
     $birthdayVideo = null;
-    foreach ($videos as $video) {
-        if ($video['birthday']) {
-            $birthdayVideo = $video;
-            break;
+    $currentTime = strtotime($simulatedTime);
+    $midnight = strtotime(date('Y-m-d', $currentTime));
+    $timeSinceMidnight = $currentTime - $midnight;
+    $redirectWindow = ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800);
+
+    if ($redirectWindow) {
+        foreach ($videos as $video) {
+            if ($video['birthday']) {
+                $birthdayVideo = $video;
+                break;
+            }
         }
     }
     if ($birthdayVideo) {
         header("Location: https://www.youtube.com/watch?v=" . $birthdayVideo['videoId']);
         exit;
     } else {
-        // If no birthday video is found, return a 404 error
+        // If no birthday video is found or outside the redirect window, return a 404 error
         header("HTTP/1.0 404 Not Found");
-        echo json_encode(['error' => 'No birthday video found']);
+        echo json_encode(['error' => 'No birthday video found or outside redirect window']);
         exit;
     }
 }
