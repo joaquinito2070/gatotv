@@ -211,6 +211,11 @@ if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
     if ($birthdayVideo) {
         header("Location: https://www.youtube.com/watch?v=" . $birthdayVideo['videoId']);
         exit;
+    } else {
+        // If no birthday video is found, return a 404 error
+        header("HTTP/1.0 404 Not Found");
+        echo json_encode(['error' => 'No birthday video found']);
+        exit;
     }
 }
 
