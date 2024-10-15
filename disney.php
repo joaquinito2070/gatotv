@@ -62,7 +62,7 @@ if (isDisneyBirthday($simulatedTime)) {
             </style>
             <script>
                 setTimeout(function() {
-                    window.location.href = '" . htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8') . "';
+                    window.location.href = '" . str_replace('&amp;', '&', htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8')) . "';
                 }, 10000);
             </script>
         </head>
