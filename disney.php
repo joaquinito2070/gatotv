@@ -93,8 +93,10 @@ if (isDisneyBirthday($simulatedTime)) {
         exit;
     }
 } else {
-    // If it's not Disney's birthday, redirect immediately to the original URL
-    header("Location: " . $url);
+    // If it's not Disney's birthday, return a 410 Gone error
+    header("HTTP/1.1 410 Gone");
+    header("Content-Type: text/plain; charset=UTF-8");
+    echo "Error 410: Este servicio solo está disponible durante el cumpleaños de Disney (16 de octubre).";
     exit;
 }
 ?>
