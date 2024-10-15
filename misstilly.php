@@ -51,13 +51,15 @@ function isDisneyBirthday($simulatedTime) {
 }
 
 // Function to generate RSS feed
-function generateRSS($videos, $lastUpdateTime) {
+function generateRSS($videos, $lastUpdateTime, $simulatedTime, $timezone) {
     $rss = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"></rss>');
     $channel = $rss->addChild('channel');
     $channel->addChild('title', 'Miss Tilly Birthday Videos');
     $channel->addChild('link', 'https://www.youtube.com/playlist?list=PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET');
     $channel->addChild('description', 'Recent birthday videos from Miss Tilly');
     $channel->addChild('lastBuildDate', date('r', $lastUpdateTime));
+    $channel->addChild('simulatedTime', $simulatedTime);
+    $channel->addChild('timezone', $timezone);
 
     foreach ($videos as $video) {
         if (isset($video['birthday']) && $video['birthday']) {
@@ -65,7 +67,7 @@ function generateRSS($videos, $lastUpdateTime) {
             $item->addChild('title', $video['title']);
             $link = 'https://www.youtube.com/watch?v=' . $video['videoId'];
             if (isset($video['disney_birthday']) && $video['disney_birthday']) {
-                $link = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($link));
+                $link = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($link)) . '&time=' . urlencode($simulatedTime) . '&time_zone=' . urlencode($timezone);
             }
             $item->addChild('link', $link);
             $description = $video['birthday_message'];
@@ -82,20 +84,22 @@ function generateRSS($videos, $lastUpdateTime) {
 }
 
 // Function to generate JSON Feed
-function generateJSONFeed($videos, $lastUpdateTime) {
+function generateJSONFeed($videos, $lastUpdateTime, $simulatedTime, $timezone) {
     $feed = [
         'version' => 'https://jsonfeed.org/version/1',
         'title' => 'Miss Tilly Birthday Videos',
         'home_page_url' => 'https://www.youtube.com/playlist?list=PLfDtKI1uwng7Hb35F-ZTyReWO2H7O9WET',
         'feed_url' => 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'],
-        'items' => []
+        'items' => [],
+        'simulatedTime' => $simulatedTime,
+        'timezone' => $timezone
     ];
 
     foreach ($videos as $video) {
         if (isset($video['birthday']) && $video['birthday']) {
             $url = 'https://www.youtube.com/watch?v=' . $video['videoId'];
             if (isset($video['disney_birthday']) && $video['disney_birthday']) {
-                $url = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($url));
+                $url = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($url)) . '&time=' . urlencode($simulatedTime) . '&time_zone=' . urlencode($timezone);
             }
             $item = [
                 'id' => $video['videoId'],
@@ -129,7 +133,7 @@ function generateJSONAPI($videos, $lastUpdateTime, $traceId, $playlistId, $simul
             }
             $url = 'https://www.youtube.com/watch?v=' . $video['videoId'];
             if (isset($video['disney_birthday']) && $video['disney_birthday']) {
-                $url = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($url));
+                $url = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($url)) . '&time=' . urlencode($simulatedTime) . '&time_zone=' . urlencode($timezone);
             }
             $data[] = [
                 'type' => 'birthdayVideos',
@@ -285,7 +289,7 @@ if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
     if ($birthdayVideo) {
         $redirectUrl = 'https://www.youtube.com/watch?v=' . $birthdayVideo['videoId'];
         if (isset($birthdayVideo['disney_birthday']) && $birthdayVideo['disney_birthday']) {
-            $redirectUrl = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($redirectUrl));
+            $redirectUrl = 'https://joaquinito02.es/disney.php?base64_url=' . base64_encode(gzcompress($redirectUrl)) . '&time=' . urlencode($simulatedTime) . '&time_zone=' . urlencode($timezone);
         }
         header("Location: " . $redirectUrl);
         exit;
@@ -300,10 +304,10 @@ if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
 // Check if RSS format is requested
 if (isset($_GET['format']) && $_GET['format'] === 'rss') {
     header("Content-Type: application/rss+xml; charset=UTF-8");
-    echo generateRSS($videos, $lastUpdateTime);
+    echo generateRSS($videos, $lastUpdateTime, $simulatedTime, $timezone);
 } elseif (isset($_GET['format']) && $_GET['format'] === 'json') {
     header("Content-Type: application/json; charset=UTF-8");
-    echo generateJSONFeed($videos, $lastUpdateTime);
+    echo generateJSONFeed($videos, $lastUpdateTime, $simulatedTime, $timezone);
 } elseif (isset($_GET['format']) && $_GET['format'] === 'jsonapi') {
     header("Content-Type: application/vnd.api+json");
     echo generateJSONAPI($videos, $lastUpdateTime, $traceId, $playlistId, $simulatedDateTime->format('Y-m-d\TH:i:sP'), $timezone, $showBirthdays);
