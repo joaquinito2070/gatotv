@@ -60,12 +60,12 @@ function generateRSS($videos, $lastUpdateTime) {
     $channel->addChild('lastBuildDate', date('r', $lastUpdateTime));
 
     foreach ($videos as $video) {
-        if ($video['birthday']) {
+        if (isset($video['birthday']) && $video['birthday']) {
             $item = $channel->addChild('item');
             $item->addChild('title', $video['title']);
             $item->addChild('link', 'https://www.youtube.com/watch?v=' . $video['videoId']);
             $description = $video['birthday_message'];
-            if ($video['disney_birthday']) {
+            if (isset($video['disney_birthday']) && $video['disney_birthday']) {
                 $description .= ' ' . $video['disney_message'];
             }
             $item->addChild('description', $description);
@@ -88,7 +88,7 @@ function generateJSONFeed($videos, $lastUpdateTime) {
     ];
 
     foreach ($videos as $video) {
-        if ($video['birthday']) {
+        if (isset($video['birthday']) && $video['birthday']) {
             $item = [
                 'id' => $video['videoId'],
                 'url' => 'https://www.youtube.com/watch?v=' . $video['videoId'],
@@ -96,7 +96,7 @@ function generateJSONFeed($videos, $lastUpdateTime) {
                 'content_text' => $video['birthday_message'],
                 'date_published' => date('c', $lastUpdateTime)
             ];
-            if ($video['disney_birthday']) {
+            if (isset($video['disney_birthday']) && $video['disney_birthday']) {
                 $item['content_text'] .= ' ' . $video['disney_message'];
             }
             $feed['items'][] = $item;
@@ -104,6 +104,49 @@ function generateJSONFeed($videos, $lastUpdateTime) {
     }
 
     return json_encode($feed, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+}
+
+// Function to generate JSON:API
+function generateJSONAPI($videos, $lastUpdateTime, $traceId, $playlistId, $simulatedTime, $timezone, $showBirthdays) {
+    $data = [];
+    foreach ($videos as $video) {
+        if (isset($video['birthday']) && $video['birthday']) {
+            $attributes = [
+                'title' => $video['title'],
+                'uploadDate' => $video['uploadDate'],
+                'birthdayMessage' => $video['birthday_message'],
+            ];
+            if (isset($video['disney_birthday']) && $video['disney_birthday']) {
+                $attributes['disneyBirthdayMessage'] = $video['disney_message'];
+            }
+            $data[] = [
+                'type' => 'birthdayVideos',
+                'id' => $video['videoId'],
+                'attributes' => $attributes,
+                'links' => [
+                    'self' => 'https://www.youtube.com/watch?v=' . $video['videoId']
+                ]
+            ];
+        }
+    }
+
+    $jsonapi = [
+        'jsonapi' => ['version' => '1.0'],
+        'data' => $data,
+        'meta' => [
+            'traceId' => $traceId,
+            'lastUpdate' => date('Y-m-d\TH:i:sP', $lastUpdateTime),
+            'simulatedTime' => $simulatedTime,
+            'timezone' => $timezone,
+            'showBirthdays' => $showBirthdays
+        ],
+        'links' => [
+            'self' => 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'],
+            'playlist' => 'https://www.youtube.com/playlist?list=' . $playlistId
+        ]
+    ];
+
+    return json_encode($jsonapi, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 }
 
 // Function to determine if an update should occur and return the update time
@@ -144,7 +187,12 @@ $index = 0;
 $currentTime = strtotime($simulatedTime);
 $midnight = strtotime(date('Y-m-d', $currentTime));
 $timeSinceMidnight = $currentTime - $midnight;
-$showBirthdays = ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800);
+
+// Generate a random number between 360 and 1800 (6 to 30 minutes)
+$randomDelay = mt_rand(360, 1800);
+
+// Determine if birthdays should be shown based on the random delay
+$showBirthdays = ($timeSinceMidnight >= $randomDelay && $timeSinceMidnight <= 1800);
 
 foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0]['playlistVideoListRenderer']['contents'] as $item) {
     $videoRenderer = $item['playlistVideoRenderer'];
@@ -215,11 +263,11 @@ if (isset($_GET['redir']) && $_GET['redir'] === 'true') {
     $currentTime = strtotime($simulatedTime);
     $midnight = strtotime(date('Y-m-d', $currentTime));
     $timeSinceMidnight = $currentTime - $midnight;
-    $redirectWindow = ($timeSinceMidnight >= 360 && $timeSinceMidnight <= 1800);
+    $redirectWindow = ($timeSinceMidnight >= $randomDelay && $timeSinceMidnight <= 1800);
 
     if ($redirectWindow) {
         foreach ($videos as $video) {
-            if ($video['birthday']) {
+            if (isset($video['birthday']) && $video['birthday']) {
                 $birthdayVideo = $video;
                 break;
             }
@@ -243,6 +291,9 @@ if (isset($_GET['format']) && $_GET['format'] === 'rss') {
 } elseif (isset($_GET['format']) && $_GET['format'] === 'json') {
     header("Content-Type: application/json; charset=UTF-8");
     echo generateJSONFeed($videos, $lastUpdateTime);
+} elseif (isset($_GET['format']) && $_GET['format'] === 'jsonapi') {
+    header("Content-Type: application/vnd.api+json");
+    echo generateJSONAPI($videos, $lastUpdateTime, $traceId, $playlistId, $simulatedDateTime->format('Y-m-d\TH:i:sP'), $timezone, $showBirthdays);
 } else {
     // Output the JSON response
     echo json_encode($response, JSON_PRETTY_PRINT);
