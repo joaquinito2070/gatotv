@@ -35,6 +35,18 @@ $url = @gzuncompress($decodedUrl) ?: $decodedUrl;
 $isWebBrowser = !empty($_SERVER['HTTP_USER_AGENT']) && preg_match("/(Mozilla|Opera|Chrome|Safari|Firefox|Edge|MSIE|Trident)/i", $_SERVER['HTTP_USER_AGENT']);
 
 if (isDisneyBirthday($simulatedTime)) {
+    // Prepare data for redirection
+    $redirectData = [
+        'base64_url' => base64_encode(gzcompress($url)),
+        'base64_request_headers' => base64_encode(gzcompress(json_encode(getallheaders()))),
+        'base64_user_agent' => base64_encode(gzcompress($_SERVER['HTTP_USER_AGENT'] ?? '')),
+        'base64_start' => base64_encode(gzcompress(date('c', strtotime('+10 seconds')))),
+        'base64_end' => base64_encode(gzcompress(date('c', strtotime('+20 seconds')))),
+        'base64_time' => base64_encode(gzcompress($simulatedTime))
+    ];
+
+    $redirectUrl = 'disney_post.php?' . http_build_query($redirectData);
+
     if ($isWebBrowser) {
         // Output HTML for web browsers
         header("Content-Type: text/html; charset=UTF-8");
@@ -50,7 +62,7 @@ if (isDisneyBirthday($simulatedTime)) {
             </style>
             <script>
                 setTimeout(function() {
-                    window.location.href = '" . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . "';
+                    window.location.href = '" . htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8') . "';
                 }, 10000);
             </script>
         </head>
@@ -62,11 +74,11 @@ if (isDisneyBirthday($simulatedTime)) {
     } else {
         // For non-web browsers, wait 10 seconds then redirect
         sleep(10);
-        header("Location: " . $url);
+        header("Location: " . $redirectUrl);
         exit;
     }
 } else {
-    // If it's not Disney's birthday, redirect immediately
+    // If it's not Disney's birthday, redirect immediately to the original URL
     header("Location: " . $url);
     exit;
 }
