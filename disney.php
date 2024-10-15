@@ -27,6 +27,13 @@ function isDisneyBirthday($simulatedTime) {
 // Get the base64_url parameter
 $base64Url = isset($_GET['base64_url']) ? $_GET['base64_url'] : '';
 
+// Check if URL is specified
+if (empty($base64Url)) {
+    header("HTTP/1.0 404 Not Found");
+    echo "Error 404: URL not specified";
+    exit;
+}
+
 // Decode the URL
 $decodedUrl = base64_decode($base64Url);
 $url = @gzuncompress($decodedUrl) ?: $decodedUrl;
@@ -42,7 +49,8 @@ if (isDisneyBirthday($simulatedTime)) {
         'base64_user_agent' => base64_encode(gzcompress($_SERVER['HTTP_USER_AGENT'] ?? '')),
         'base64_start' => base64_encode(gzcompress(date('c', strtotime('+10 seconds')))),
         'base64_end' => base64_encode(gzcompress(date('c', strtotime('+20 seconds')))),
-        'base64_time' => base64_encode(gzcompress($simulatedTime))
+        'base64_time' => base64_encode(gzcompress($simulatedTime)),
+        'base64_time_zone' => base64_encode(gzcompress($timezone))
     ];
 
     $redirectUrl = 'disney_post.php?' . http_build_query($redirectData);
