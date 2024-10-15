@@ -164,12 +164,13 @@ foreach ($playlistData['contents']['twoColumnBrowseResultsRenderer']['tabs'][0][
         $uploadDate = 'unknown';
     }
 
+    $simulatedDateTime = new DateTime($simulatedTime);
     $video = [
         'title' => $videoRenderer['title']['runs'][0]['text'],
         'videoId' => $videoId,
         'uploadDate' => $uploadDate,
-        'birthday' => isBirthday($uploadDate, $simulatedTime),
-        'disney_birthday' => isDisneyBirthday($simulatedTime)
+        'birthday' => isBirthday($uploadDate, $simulatedDateTime->format('Y-m-d H:i:s')),
+        'disney_birthday' => isDisneyBirthday($simulatedDateTime->format('Y-m-d H:i:s'))
     ];
 
     if ($video['birthday']) {
