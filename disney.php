@@ -38,6 +38,13 @@ if (empty($base64Url)) {
 $decodedUrl = base64_decode($base64Url);
 $url = @gzuncompress($decodedUrl) ?: $decodedUrl;
 
+// Check if the URL is valid
+if (!filter_var($url, FILTER_VALIDATE_URL)) {
+    header("HTTP/1.0 404 Not Found");
+    echo "Error 404: Invalid URL";
+    exit;
+}
+
 // Check if it's a web browser
 $isWebBrowser = !empty($_SERVER['HTTP_USER_AGENT']) && preg_match("/(Mozilla|Opera|Chrome|Safari|Firefox|Edge|MSIE|Trident)/i", $_SERVER['HTTP_USER_AGENT']);
 
