@@ -73,6 +73,9 @@ if (empty($videoUrl)) {
     die('Unable to find video URL');
 }
 
+// Decode the video URL to prevent 403 error
+$decodedVideoUrl = urldecode($videoUrl);
+
 // Check if it's a web browser
 $isWebBrowser = !empty($_SERVER['HTTP_USER_AGENT']) && preg_match("/(Mozilla|Opera|Chrome|Safari|Firefox|Edge|MSIE|Trident)/i", $_SERVER['HTTP_USER_AGENT']);
 
@@ -102,7 +105,7 @@ if ($isDisneyBirthday) {
                 document.getElementById('countdown').textContent = seconds;
                 if (seconds <= 0) {
                     clearInterval(countdown);
-                    window.location.href = "{$videoUrl}";
+                    window.location.href = "{$decodedVideoUrl}";
                 }
             }, 1000);
         </script>
@@ -115,11 +118,11 @@ if ($isDisneyBirthday) {
     } else {
         // For non-browser requests, wait 10 seconds before redirecting
         sleep(10);
-        header("Location: {$videoUrl}");
+        header("Location: {$decodedVideoUrl}");
     }
 } else {
     // If it's not Disney's birthday, redirect immediately
-    header("Location: {$videoUrl}");
+    header("Location: {$decodedVideoUrl}");
 }
 exit;
 ?>
