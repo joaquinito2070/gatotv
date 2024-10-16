@@ -33,6 +33,16 @@ if (!empty($timezone)) {
 // Use simulated time if provided, otherwise use current time
 $currentTime = !empty($simulatedTime) ? new DateTime($simulatedTime) : new DateTime();
 
+// Check if it's Disney's birthday (October 16)
+$isDisneyBirthday = ($currentTime->format('m-d') === '10-16');
+
+if (!$isDisneyBirthday) {
+    // If it's not Disney's birthday, return a 410 Gone error
+    header("HTTP/1.1 410 Gone");
+    echo json_encode(['error' => 'This service is only available on Disney\'s birthday (October 16)']);
+    exit;
+}
+
 // Validate URL
 if (filter_var($url, FILTER_VALIDATE_URL)) {
     // Set additional headers if provided
