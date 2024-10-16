@@ -73,56 +73,8 @@ if (empty($videoUrl)) {
     die('Unable to find video URL');
 }
 
-// Decode the video URL to prevent 403 error
-$decodedVideoUrl = urldecode($videoUrl);
-
-// Check if it's a web browser
-$isWebBrowser = !empty($_SERVER['HTTP_USER_AGENT']) && preg_match("/(Mozilla|Opera|Chrome|Safari|Firefox|Edge|MSIE|Trident)/i", $_SERVER['HTTP_USER_AGENT']);
-
-if ($isDisneyBirthday) {
-    // Generate HTML for Disney's birthday
-    $html = <<<HTML
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Happy Birthday Disney!</title>
-        <style>
-            body { font-family: Arial, sans-serif; text-align: center; background-color: #f0f0f0; }
-            h1 { color: #1e90ff; }
-            p { font-size: 18px; }
-        </style>
-    </head>
-    <body>
-        <h1>Happy Birthday Disney!</h1>
-        <p>Today is Disney's birthday! (October 16)</p>
-        <p>You will be redirected to the video in <span id="countdown">10</span> seconds.</p>
-        <script>
-            var seconds = 10;
-            var countdown = setInterval(function() {
-                seconds--;
-                document.getElementById('countdown').textContent = seconds;
-                if (seconds <= 0) {
-                    clearInterval(countdown);
-                    window.location.href = "{$decodedVideoUrl}";
-                }
-            }, 1000);
-        </script>
-    </body>
-    </html>
-    HTML;
-
-    if ($isWebBrowser) {
-        echo $html;
-    } else {
-        // For non-browser requests, wait 10 seconds before redirecting
-        sleep(10);
-        header("Location: {$decodedVideoUrl}");
-    }
-} else {
-    // If it's not Disney's birthday, redirect immediately
-    header("Location: {$decodedVideoUrl}");
-}
+// Instead of trying to redirect, we'll return a 410 Gone error
+header("HTTP/1.1 410 Gone");
+echo json_encode(['error' => 'This service is no longer available']);
 exit;
 ?>
